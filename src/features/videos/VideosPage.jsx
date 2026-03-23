@@ -25,6 +25,8 @@ export const VideosPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editVideo, setEditVideo] = useState(null);
   
+  const [submitting, setSubmitting] = useState(false);
+
   // Author data for creation
   const [authors, setAuthors] = useState([]);
 
@@ -59,6 +61,7 @@ export const VideosPage = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     const f = new FormData(e.target);
     const data = {
       title: f.get('title'),
@@ -74,6 +77,7 @@ export const VideosPage = () => {
       setEditVideo(null);
       fetchVideos();
     } catch (err) { toast.error(err.message || 'Failed to update'); }
+    finally { setSubmitting(false); }
   };
 
   const columns = [
@@ -129,6 +133,7 @@ export const VideosPage = () => {
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Add Video" >
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
+          setSubmitting(true);
           const f = new FormData(e.target);
           const data = {
             title: f.get('title'),
@@ -144,6 +149,7 @@ export const VideosPage = () => {
             setShowCreate(false);
             fetchVideos();
           } catch (err) { toast.error(err.message || 'Failed to add video'); }
+          finally { setSubmitting(false); }
         }}>
           <Input label="Title" name="title" placeholder="Video title" required />
           <Select label="Author" name="authorId" required options={[
@@ -158,7 +164,7 @@ export const VideosPage = () => {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button type="submit">Create</Button>
+            <Button type="submit" isLoading={submitting}>Create</Button>
           </div>
         </form>
       </Modal>
@@ -180,7 +186,7 @@ export const VideosPage = () => {
               options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }]} />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" onClick={() => setEditVideo(null)}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" isLoading={submitting}>Save Changes</Button>
             </div>
           </form>
         </Modal>

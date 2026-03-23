@@ -12,6 +12,7 @@ export const WalletPage = () => {
   const [packs, setPacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchPacks = async () => {
     setLoading(true);
@@ -71,6 +72,7 @@ export const WalletPage = () => {
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Coin Pack" >
         <form className="space-y-4" onSubmit={async e => {
           e.preventDefault();
+          setSubmitting(true);
           const formData = new FormData(e.target);
           const data = {
             name: formData.get('name'),
@@ -87,12 +89,13 @@ export const WalletPage = () => {
             setShowCreate(false);
             fetchPacks();
           } catch(err) { toast.error(err.message || 'Failed to create pack'); }
+          finally { setSubmitting(false); }
         }}>
           <Input label="Pack Name" name="name" placeholder="e.g. Super Pack" required />
           <div className="grid grid-cols-2 gap-4"><Input label="Coins" name="coins" type="number" placeholder="100" required /><Input label="Bonus" name="bonusCoins" type="number" placeholder="0" /></div>
           <div className="grid grid-cols-2 gap-4"><Input label="Price (INR)" name="priceINR" type="number" placeholder="99" required /><Input label="Price (USD)" name="priceUSD" type="number" placeholder="1.99" /></div>
           <Input label="Offer Label" name="offerLabel" placeholder="e.g. 20% Bonus! (optional)" />
-          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button type="submit">Create</Button></div>
+          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button type="submit" isLoading={submitting}>Create</Button></div>
         </form>
       </Modal>
     </div>

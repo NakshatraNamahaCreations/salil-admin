@@ -295,8 +295,8 @@ export const AuthorsPage = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createSubmitting}>
-              {createSubmitting ? 'Creating...' : 'Create Author'}
+            <Button type="submit" isLoading={createSubmitting}>
+              Create Author
             </Button>
           </div>
         </form>
@@ -358,8 +358,8 @@ export const AuthorsPage = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={editSubmitting}>
-                {editSubmitting ? 'Saving...' : 'Save Changes'}
+              <Button type="submit" isLoading={editSubmitting}>
+                Save Changes
               </Button>
             </div>
           </form>

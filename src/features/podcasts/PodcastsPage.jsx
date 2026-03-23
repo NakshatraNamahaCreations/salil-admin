@@ -90,12 +90,14 @@ export const PodcastsPage = () => {
       description: f.get('description'),
       isFree: true,
     };
+    setSaving(true);
     try {
       await api.post(`/admin/podcast-series/${currentSeries._id}/episodes`, data);
       toast.success('Episode added');
       setShowAddEpisode(false);
       fetchEpisodes(currentSeries._id);
     } catch (err) { toast.error(err.message || 'Failed to add episode'); }
+    finally { setSaving(false); }
   };
 
   const handleEditEpisode = async (e) => {
@@ -109,12 +111,14 @@ export const PodcastsPage = () => {
       isFree: true,
       status: f.get('status'),
     };
+    setSaving(true);
     try {
       await api.put(`/admin/podcast-episodes/${editEpisode._id}`, data);
       toast.success('Episode updated');
       setEditEpisode(null);
       fetchEpisodes(currentSeries._id);
     } catch (err) { toast.error(err.message || 'Failed to update episode'); }
+    finally { setSaving(false); }
   };
 
   const handleDeleteEpisode = async (episodeId) => {
@@ -178,7 +182,7 @@ export const PodcastsPage = () => {
             <input type="hidden" name="isFree" value="true" />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" onClick={() => setShowAddEpisode(false)}>Cancel</Button>
-              <Button type="submit">Add Episode</Button>
+              <Button type="submit" isLoading={saving}>Add Episode</Button>
             </div>
           </form>
         </Modal>
@@ -196,7 +200,7 @@ export const PodcastsPage = () => {
               <input type="hidden" name="isFree" value="true" />
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="secondary" onClick={() => setEditEpisode(null)}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" isLoading={saving}>Save Changes</Button>
               </div>
             </form>
           </Modal>
@@ -276,7 +280,7 @@ export const PodcastsPage = () => {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={() => setShowCreate(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving ? 'Creating...' : 'Create'}</Button>
+            <Button type="submit" isLoading={saving}>Create</Button>
           </div>
         </form>
       </Modal>
@@ -298,7 +302,7 @@ export const PodcastsPage = () => {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" onClick={() => setEditSeries(null)} disabled={saving}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+              <Button type="submit" isLoading={saving}>Save Changes</Button>
             </div>
           </form>
         </Modal>

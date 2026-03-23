@@ -252,7 +252,7 @@ export const CouponsPage = () => {
           <CouponFormFields />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" disabled={submitting} onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create Coupon'}</Button>
+            <Button type="submit" isLoading={submitting}>Create Coupon</Button>
           </div>
         </form>
       </Modal>
@@ -266,7 +266,7 @@ export const CouponsPage = () => {
             <CouponFormFields coupon={editCoupon} />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" disabled={submitting} onClick={() => setEditCoupon(null)}>Cancel</Button>
-              <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save Changes'}</Button>
+              <Button type="submit" isLoading={submitting}>Save Changes</Button>
             </div>
           </form>
         </Modal>

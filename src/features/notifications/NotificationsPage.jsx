@@ -13,6 +13,7 @@ export const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchNotifs = async () => {
     setLoading(true);
@@ -53,8 +54,9 @@ export const NotificationsPage = () => {
       </div>
       <DataTable columns={columns} data={notifications} isLoading={loading} />
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Send Notification" >
-        <form className="space-y-4" onSubmit={async (e) => { 
-          e.preventDefault(); 
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
           const formData = new FormData(e.target);
           const data = {
             title: formData.get('title'),
@@ -68,6 +70,7 @@ export const NotificationsPage = () => {
             setShowCreate(false);
             fetchNotifs();
           } catch (error) { toast.error(error.message || 'Failed to send notification'); }
+          finally { setSubmitting(false); }
         }}>
           <Input label="Title" name="title" placeholder="Notification title" required />
           <Textarea label="Body" name="body" placeholder="Notification message..." rows={3} required />
@@ -75,7 +78,7 @@ export const NotificationsPage = () => {
             <Select label="Type" name="type" options={[{ value: 'promo', label: 'Promo' }, { value: 'offer', label: 'Offer' }, { value: 'system', label: 'System' }, { value: 'update', label: 'Update' }]} />
             <Select label="Target" name="target" options={[{ value: 'all', label: 'All Users' }, { value: 'readers', label: 'Readers' }, { value: 'authors', label: 'Authors' }]} />
           </div>
-          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button type="submit" icon={Send}>Send</Button></div>
+          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button type="submit" icon={Send} isLoading={submitting}>Send</Button></div>
         </form>
       </Modal>
     </div>

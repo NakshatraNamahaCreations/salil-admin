@@ -13,6 +13,7 @@ export const CategoriesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCatModal, setShowCatModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -102,8 +103,9 @@ export const CategoriesPage = () => {
       </div>
 
       <Modal isOpen={showCatModal} onClose={() => setShowCatModal(false)} title="Add Category">
-        <form className="space-y-4" onSubmit={async (e) => { 
-          e.preventDefault(); 
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
           const formData = new FormData(e.target);
           try {
             await api.post('/admin/categories', { name: formData.get('name'), slug: formData.get('slug') });
@@ -111,15 +113,17 @@ export const CategoriesPage = () => {
             setShowCatModal(false);
             fetchData();
           } catch (error) { toast.error(error.message || 'Failed to add category'); }
+          finally { setSubmitting(false); }
         }}>
           <Input label="Name" name="name" placeholder="e.g. Science Fiction" required />
           <Input label="Slug" name="slug" placeholder="Auto-generated" />
-          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCatModal(false)}>Cancel</Button><Button type="submit">Create</Button></div>
+          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCatModal(false)}>Cancel</Button><Button type="submit" isLoading={submitting}>Create</Button></div>
         </form>
       </Modal>
       <Modal isOpen={showTagModal} onClose={() => setShowTagModal(false)} title="Add Tag">
-        <form className="space-y-4" onSubmit={async (e) => { 
-          e.preventDefault(); 
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
           const formData = new FormData(e.target);
           try {
             await api.post('/admin/tags', { name: formData.get('name') });
@@ -127,9 +131,10 @@ export const CategoriesPage = () => {
             setShowTagModal(false);
             fetchData();
           } catch (error) { toast.error(error.message || 'Failed to add tag'); }
+          finally { setSubmitting(false); }
         }}>
           <Input label="Name" name="name" placeholder="e.g. Featured" required />
-          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowTagModal(false)}>Cancel</Button><Button type="submit">Create</Button></div>
+          <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowTagModal(false)}>Cancel</Button><Button type="submit" isLoading={submitting}>Create</Button></div>
         </form>
       </Modal>
     </div>

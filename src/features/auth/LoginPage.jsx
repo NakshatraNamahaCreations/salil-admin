@@ -124,7 +124,7 @@ export const LoginPage = () => {
         <Button
           type="submit"
           fullWidth
-          disabled={isSubmitting}
+          isLoading={isSubmitting}
           icon={LogIn}
           style={{ marginTop: 16 }}
         >

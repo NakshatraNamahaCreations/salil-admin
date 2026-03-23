@@ -166,7 +166,7 @@ export const ReferralsPage = () => {
           />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" disabled={submitting} onClick={() => setShowSettings(false)}>Cancel</Button>
-            <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save Settings'}</Button>
+            <Button type="submit" isLoading={submitting}>Save Settings</Button>
           </div>
         </form>
       </Modal>

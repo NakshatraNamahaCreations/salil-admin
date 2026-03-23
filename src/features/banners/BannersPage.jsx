@@ -436,8 +436,8 @@ export const BannersPage = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create'}
+            <Button type="submit" isLoading={submitting}>
+              Create
             </Button>
           </div>
         </form>
@@ -542,8 +542,8 @@ export const BannersPage = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Updating...' : 'Update'}
+            <Button type="submit" isLoading={submitting}>
+              Update
             </Button>
           </div>
         </form>

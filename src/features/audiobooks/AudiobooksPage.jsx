@@ -28,6 +28,7 @@ export const AudiobooksPage = () => {
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [editTrack, setEditTrack] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -80,6 +81,7 @@ export const AudiobooksPage = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    setSubmitting(true);
     try {
       await api.post('/admin/audiobooks', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -88,6 +90,7 @@ export const AudiobooksPage = () => {
       setShowCreate(false);
       fetchTracks();
     } catch (err) { toast.error(err.message || 'Failed to create track'); }
+    finally { setSubmitting(false); }
   };
 
   const handleEdit = async (e) => {
@@ -96,6 +99,7 @@ export const AudiobooksPage = () => {
     const audioFile = formData.get('audioFile');
     const hasFile = audioFile && audioFile instanceof File && audioFile.size > 0;
 
+    setSubmitting(true);
     try {
       if (hasFile) {
         // Only use multipart when there's actually an audio file to upload
@@ -117,6 +121,7 @@ export const AudiobooksPage = () => {
       setEditTrack(null);
       fetchTracks();
     } catch (err) { toast.error(err.message || 'Failed to update'); }
+    finally { setSubmitting(false); }
   };
 
   const bookLabel = (b) => b.bookLanguage ? `${b.title} (${b.bookLanguage})` : b.title;
@@ -199,7 +204,7 @@ export const AudiobooksPage = () => {
 
       <div className="flex justify-end gap-3 pt-2">
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" isLoading={submitting}>{submitLabel}</Button>
       </div>
     </form>
   );

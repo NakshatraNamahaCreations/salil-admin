@@ -86,6 +86,7 @@ export const BooksPage = () => {
   const [readChapter, setReadChapter] = useState(null);
   const [showAddChapter, setShowAddChapter] = useState(false);
   const [editChapter, setEditChapter] = useState(null);
+  const [chapterSubmitting, setChapterSubmitting] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkRows, setBulkRows] = useState([newBulkRow(1)]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -95,6 +96,7 @@ export const BooksPage = () => {
   const [audioChaptersLoading, setAudioChaptersLoading] = useState(false);
   const [showAddAudio, setShowAddAudio] = useState(false);
   const [editAudio, setEditAudio] = useState(null);
+  const [audioChapterSubmitting, setAudioChapterSubmitting] = useState(false);
   const [showBulkAddAudio, setShowBulkAddAudio] = useState(false);
   const [audioBulkRows, setAudioBulkRows] = useState([newAudioBulkRow(1)]);
   const [audioBulkSubmitting, setAudioBulkSubmitting] = useState(false);
@@ -282,6 +284,7 @@ export const BooksPage = () => {
   const handleAddChapter = async (e) => {
     try {
       e.preventDefault();
+      setChapterSubmitting(true);
       const f = new FormData(e.target);
       const payload = new FormData();
       payload.append('title', f.get('title') || '');
@@ -298,6 +301,8 @@ export const BooksPage = () => {
       fetchChapters(chaptersBook._id);
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Failed to add chapter');
+    } finally {
+      setChapterSubmitting(false);
     }
   };
 
@@ -313,6 +318,7 @@ export const BooksPage = () => {
   const handleEditChapter = async (e) => {
     try {
       e.preventDefault();
+      setChapterSubmitting(true);
       const f = new FormData(e.target);
       const payload = new FormData();
       payload.append('title', f.get('title') || '');
@@ -329,6 +335,8 @@ export const BooksPage = () => {
       fetchChapters(chaptersBook._id);
     } catch (err) {
       toast.error(err?.message || 'Failed to update chapter');
+    } finally {
+      setChapterSubmitting(false);
     }
   };
 
@@ -372,6 +380,7 @@ export const BooksPage = () => {
   const handleAddAudioChapter = async (e) => {
     try {
       e.preventDefault();
+      setAudioChapterSubmitting(true);
       const f = new FormData(e.target);
       const payload = new FormData();
       payload.append('bookId', chaptersBook._id);
@@ -390,12 +399,15 @@ export const BooksPage = () => {
       fetchAudioChapters(chaptersBook._id);
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Failed to add audio chapter');
+    } finally {
+      setAudioChapterSubmitting(false);
     }
   };
 
   const handleEditAudioChapter = async (e) => {
     try {
       e.preventDefault();
+      setAudioChapterSubmitting(true);
       const f = new FormData(e.target);
       const payload = new FormData();
       payload.append('title', f.get('title') || '');
@@ -413,6 +425,8 @@ export const BooksPage = () => {
       fetchAudioChapters(chaptersBook._id);
     } catch (err) {
       toast.error(err?.message || 'Failed to update audio chapter');
+    } finally {
+      setAudioChapterSubmitting(false);
     }
   };
 
@@ -726,7 +740,7 @@ export const BooksPage = () => {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setShowAddChapter(false)}>Cancel</Button>
-              <Button type="submit">Add Chapter</Button>
+              <Button type="submit" isLoading={chapterSubmitting}>Add Chapter</Button>
             </div>
           </form>
         </Modal>
@@ -748,7 +762,7 @@ export const BooksPage = () => {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="secondary" onClick={() => setEditChapter(null)}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" isLoading={chapterSubmitting}>Save Changes</Button>
               </div>
             </form>
           </Modal>
@@ -773,7 +787,7 @@ export const BooksPage = () => {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setShowAddAudio(false)}>Cancel</Button>
-              <Button type="submit">Add Audio Chapter</Button>
+              <Button type="submit" isLoading={audioChapterSubmitting}>Add Audio Chapter</Button>
             </div>
           </form>
         </Modal>
@@ -799,7 +813,7 @@ export const BooksPage = () => {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="secondary" onClick={() => setEditAudio(null)}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" isLoading={audioChapterSubmitting}>Save Changes</Button>
               </div>
             </form>
           </Modal>
@@ -853,8 +867,8 @@ export const BooksPage = () => {
             </Button>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" disabled={bulkSubmitting} onClick={() => { setShowBulkAdd(false); setBulkRows([newBulkRow(1)]); }}>Cancel</Button>
-              <Button disabled={bulkSubmitting} onClick={handleBulkAddChapters}>
-                {bulkSubmitting ? 'Uploading...' : `Upload ${bulkRows.length} Chapter${bulkRows.length > 1 ? 's' : ''}`}
+              <Button isLoading={bulkSubmitting} onClick={handleBulkAddChapters}>
+                {`Upload ${bulkRows.length} Chapter${bulkRows.length > 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>
@@ -914,8 +928,8 @@ export const BooksPage = () => {
             </Button>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" disabled={audioBulkSubmitting} onClick={() => { setShowBulkAddAudio(false); setAudioBulkRows([newAudioBulkRow(1)]); }}>Cancel</Button>
-              <Button disabled={audioBulkSubmitting} onClick={handleBulkAddAudio}>
-                {audioBulkSubmitting ? 'Uploading...' : `Upload ${audioBulkRows.length} Track${audioBulkRows.length > 1 ? 's' : ''}`}
+              <Button isLoading={audioBulkSubmitting} onClick={handleBulkAddAudio}>
+                {`Upload ${audioBulkRows.length} Track${audioBulkRows.length > 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>
@@ -1016,7 +1030,7 @@ export const BooksPage = () => {
           <Textarea label="Description" name="description" placeholder="Write a compelling description..." rows={3} required />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" disabled={createSubmitting} onClick={() => { setShowCreate(false); setCreateImagePreview(''); }}>Cancel</Button>
-            <Button type="submit" disabled={createSubmitting}>{createSubmitting ? 'Creating...' : 'Create Book'}</Button>
+            <Button type="submit" isLoading={createSubmitting}>Create Book</Button>
           </div>
         </form>
       </Modal>
@@ -1059,7 +1073,7 @@ export const BooksPage = () => {
             <Textarea label="Description" name="description" defaultValue={editBook.description} rows={3} required />
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" disabled={editSubmitting} onClick={() => { setEditBook(null); setEditImagePreview(''); }}>Cancel</Button>
-              <Button type="submit" disabled={editSubmitting}>{editSubmitting ? 'Saving...' : 'Save Changes'}</Button>
+              <Button type="submit" isLoading={editSubmitting}>Save Changes</Button>
             </div>
           </form>
         </Modal>

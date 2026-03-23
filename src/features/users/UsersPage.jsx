@@ -108,31 +108,30 @@ export const UsersPage = () => {
   const [viewUser, setViewUser] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  console.log("users",users)
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: 1,
+        limit: 15,
 
-const fetchUsers = async () => {
-  setLoading(true);
-  try {
-    const params = {
-      page: 1,
-      limit: 15,
-     
-    };
+      };
 
-    if (search) params.search = search;
+      if (search) params.search = search;
 
-    const res = await api.get("/admin/users/admins", { params });
+      const res = await api.get("/admin/users/admins", { params });
 
-    setUsers(res?.data?.data || res?.data?.users || res?.data || []);
-    setPagination(res?.data?.pagination || null);
-  } catch (error) {
-    console.error("fetchUsers error:", error);
-    setUsers([]);
-  } finally {
-    setLoading(false);
-  }
-};
+      setUsers(res?.data?.data || res?.data?.users || res?.data || []);
+      setPagination(res?.data?.pagination || null);
+    } catch (error) {
+      console.error("fetchUsers error:", error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => { fetchUsers(); }, [page, roleFilter]);
   useEffect(() => {
@@ -150,6 +149,7 @@ const fetchUsers = async () => {
       phone: f.get('phone') || undefined,
       role: f.get('role'),
     };
+    setSubmitting(true);
     try {
       await api.post('/admin/users', payload);
       toast.success('User created successfully');
@@ -157,6 +157,8 @@ const fetchUsers = async () => {
       fetchUsers();
     } catch (err) {
       toast.error(err.message || 'Failed to create user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -171,6 +173,7 @@ const fetchUsers = async () => {
     };
     const pw = f.get('password');
     if (pw) payload.password = pw;
+    setSubmitting(true);
     try {
       await api.put(`/admin/users/${editUser._id}`, payload);
       toast.success('User updated successfully');
@@ -179,6 +182,8 @@ const fetchUsers = async () => {
       fetchUsers();
     } catch (err) {
       toast.error(err.message || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -213,7 +218,7 @@ const fetchUsers = async () => {
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-               style={{ background: `linear-gradient(135deg, var(--accent-600), #a78bfa)`, color: '#fff' }}>
+            style={{ background: `linear-gradient(135deg, var(--accent-600), #a78bfa)`, color: '#fff' }}>
             {(row.name || row.email || '?').charAt(0).toUpperCase()}
           </div>
           <div>
@@ -241,12 +246,12 @@ const fetchUsers = async () => {
           <Button variant="ghost" size="sm" icon={Eye} data-tooltip="View" onClick={() => setViewUser(row)} />
           <Button variant="ghost" size="sm" icon={Edit} data-tooltip="Edit" onClick={() => setEditUser(row)} />
           <Button variant="ghost" size="sm" icon={row.isBlocked ? Shield : ShieldOff}
-                  className={row.isBlocked ? '!text-emerald-400' : '!text-orange-400'}
-                  data-tooltip={row.isBlocked ? 'Unblock' : 'Block'}
-                  onClick={() => handleBlock(row)} />
+            className={row.isBlocked ? '!text-emerald-400' : '!text-orange-400'}
+            data-tooltip={row.isBlocked ? 'Unblock' : 'Block'}
+            onClick={() => handleBlock(row)} />
           {row.role !== 'superadmin' && (
             <Button variant="ghost" size="sm" icon={Trash2} className="!text-red-400"
-                    data-tooltip="Delete" onClick={() => handleDelete(row)} />
+              data-tooltip="Delete" onClick={() => handleDelete(row)} />
           )}
         </div>
       ),
@@ -301,7 +306,7 @@ const fetchUsers = async () => {
           <UserFormFields />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button type="submit" icon={Plus}>Create User</Button>
+            <Button type="submit" icon={Plus} isLoading={submitting}>Create User</Button>
           </div>
         </form>
       </Modal>
@@ -313,7 +318,7 @@ const fetchUsers = async () => {
             <UserFormFields user={editUser} />
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" onClick={() => setEditUser(null)}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" isLoading={submitting}>Save Changes</Button>
             </div>
           </form>
         </Modal>

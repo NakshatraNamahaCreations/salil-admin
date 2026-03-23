@@ -182,7 +182,7 @@ export const ForgotPasswordPage = () => {
             required
           />
 
-          <Button type="submit" fullWidth disabled={loading} icon={Mail} style={{ marginTop: 8 }}>
+          <Button type="submit" fullWidth isLoading={loading} icon={Mail} style={{ marginTop: 8 }}>
             {loading ? 'Sending OTP...' : 'Send OTP'}
           </Button>
 
@@ -264,7 +264,7 @@ export const ForgotPasswordPage = () => {
             ))}
           </div>
 
-          <Button type="submit" fullWidth disabled={loading} icon={KeyRound}>
+          <Button type="submit" fullWidth isLoading={loading} icon={KeyRound}>
             {loading ? 'Verifying...' : 'Verify OTP'}
           </Button>
 
@@ -355,7 +355,7 @@ export const ForgotPasswordPage = () => {
             required
           />
 
-          <Button type="submit" fullWidth disabled={loading} icon={Lock} style={{ marginTop: 8 }}>
+          <Button type="submit" fullWidth isLoading={loading} icon={Lock} style={{ marginTop: 8 }}>
             {loading ? 'Resetting...' : 'Reset Password'}
           </Button>
         </form>
