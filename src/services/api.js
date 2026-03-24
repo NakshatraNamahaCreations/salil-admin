@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://api.saliljaveri.com/api/v1',
-  // baseURL: 'http://localhost:5001/api/v1',
+  // baseURL: 'https://api.saliljaveri.com/api/v1',
+  baseURL: 'http://localhost:5001/api/v1',
 
   headers: {
     'Content-Type': 'application/json',

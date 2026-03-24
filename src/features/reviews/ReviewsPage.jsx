@@ -25,8 +25,8 @@ export const ReviewsPage = () => {
   useEffect(() => { fetchReviews(); }, []);
 
   const filtered = reviews.filter(r => {
-    const userName = r.userId?.name || r.user || '';
-    const bookTitle = r.contentId?.title || r.book || '';
+    const userName = r.user || r.userId?.name || '';
+    const bookTitle = r.contentTitle || r.contentId?.title || r.book || '';
     const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || bookTitle.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || r.status === statusFilter;
     return matchSearch && matchStatus;
@@ -40,6 +40,23 @@ export const ReviewsPage = () => {
     </div>
   );
 
+  const handleApprove = async (id) => {
+    try {
+      await api.patch(`/admin/reviews/${id}/approve`);
+      toast.success('Review approved');
+      fetchReviews();
+    } catch { toast.error('Failed to approve'); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this review?')) return;
+    try {
+      await api.delete(`/admin/reviews/${id}`);
+      toast.success('Review deleted');
+      fetchReviews();
+    } catch { toast.error('Failed to delete'); }
+  };
+
   const columns = [
     {
       header: 'Review', key: 'review',
@@ -48,7 +65,7 @@ export const ReviewsPage = () => {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.userId?.name || row.user || 'Unknown'}</span>
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>on</span>
-            <span className="text-sm font-medium" style={{ color: 'var(--accent-400)' }}>{row.contentId?.title || row.book || 'Unknown'}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--accent-400)' }}>{row.contentTitle || row.contentId?.title || row.book || 'Unknown'}</span>
           </div>
           <RatingStars rating={row.rating} />
           <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{row.body || row.comment}</p>
@@ -61,8 +78,8 @@ export const ReviewsPage = () => {
       header: '', key: 'actions',
       render: (row) => (
         <div className="flex gap-0.5">
-          {row.status === 'pending' && <Button variant="ghost" size="sm" icon={CheckCircle} className="!text-emerald-400" />}
-          <Button variant="ghost" size="sm" icon={Trash2} className="!text-red-400" />
+          {row.status === 'pending' && <Button variant="ghost" size="sm" icon={CheckCircle} className="!text-emerald-400" onClick={() => handleApprove(row._id)} />}
+          <Button variant="ghost" size="sm" icon={Trash2} className="!text-red-400" onClick={() => handleDelete(row._id)} />
         </div>
       ),
     },

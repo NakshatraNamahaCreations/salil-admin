@@ -4,7 +4,7 @@ import { SearchInput, Select } from '../../components/ui/Forms';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Forms';
-import { Headphones, Plus, Edit, Trash2, Play, Pause } from 'lucide-react';
+import { Headphones, Plus, Edit, Trash2, Play, Pause, Upload } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -29,6 +29,10 @@ export const AudiobooksPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editTrack, setEditTrack] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showZipUpload, setShowZipUpload] = useState(false);
+  const [zipUploading, setZipUploading] = useState(false);
+  const [zipResult, setZipResult] = useState(null);
+  const [zipBookId, setZipBookId] = useState('');
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -122,6 +126,30 @@ export const AudiobooksPage = () => {
       fetchTracks();
     } catch (err) { toast.error(err.message || 'Failed to update'); }
     finally { setSubmitting(false); }
+  };
+
+  const handleZipUpload = async (e) => {
+    e.preventDefault();
+    const file = e.target.zipFile.files[0];
+    if (!file) return toast.error('Please select a ZIP file');
+    if (!zipBookId) return toast.error('Please select a book');
+    const formData = new FormData();
+    formData.append('zipFile', file);
+    formData.append('bookId', zipBookId);
+    setZipUploading(true);
+    setZipResult(null);
+    try {
+      const res = await api.post('/admin/audiobooks/bulk-zip', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setZipResult(res.data || res);
+      toast.success(`${(res.data || res).uploaded} track(s) uploaded`);
+      fetchTracks();
+    } catch (err) {
+      toast.error(err.message || 'ZIP upload failed');
+    } finally {
+      setZipUploading(false);
+    }
   };
 
   const bookLabel = (b) => b.bookLanguage ? `${b.title} (${b.bookLanguage})` : b.title;
@@ -223,6 +251,7 @@ export const AudiobooksPage = () => {
           <SearchInput value={search} onChange={setSearch} placeholder="Search tracks..." className="w-52" />
           <Select value={bookFilter} onChange={e => { setBookFilter(e.target.value); setPage(1); }}
             options={bookOptions} className="!w-44" />
+          <Button icon={Upload} variant="secondary" onClick={() => { setShowZipUpload(true); setZipResult(null); setZipBookId(''); }}>ZIP Upload</Button>
           <Button icon={Plus} onClick={() => setShowCreate(true)}>Add Track</Button>
         </div>
       </div>
@@ -246,6 +275,60 @@ export const AudiobooksPage = () => {
           />
         </Modal>
       )}
+
+      {/* ZIP Upload Modal */}
+      <Modal isOpen={showZipUpload} onClose={() => { setShowZipUpload(false); setZipResult(null); }} title="Bulk ZIP Upload — Audio Tracks">
+        {!zipResult ? (
+          <form className="space-y-4" onSubmit={handleZipUpload}>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Select Book</label>
+              <select
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                style={{ background: 'var(--surface-2)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                value={zipBookId}
+                onChange={e => setZipBookId(e.target.value)}
+                required
+              >
+                <option value="">Select audiobook...</option>
+                {books.map(b => <option key={b._id} value={b._id}>{bookLabel(b)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>ZIP File (MP3, M4A, WAV...)</label>
+              <input type="file" name="zipFile" accept=".zip" className="w-full text-sm" style={{ color: 'var(--text-primary)' }} required />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Each audio file in the ZIP becomes a track. Filename = track title. Files are sorted naturally (1, 2, 10...).</p>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" onClick={() => setShowZipUpload(false)} disabled={zipUploading}>Cancel</Button>
+              <Button type="submit" icon={Upload} isLoading={zipUploading}>Upload ZIP</Button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex gap-4 text-sm">
+              <span className="font-semibold" style={{ color: 'var(--success)' }}>{zipResult.uploaded} uploaded</span>
+              {zipResult.failed > 0 && <span className="font-semibold" style={{ color: 'var(--danger)' }}>{zipResult.failed} failed</span>}
+            </div>
+            <div className="rounded-lg p-3 space-y-1 max-h-60 overflow-y-auto" style={{ background: 'var(--surface-2)' }}>
+              {zipResult.tracks?.map((t, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span style={{ color: 'var(--success)' }}>✓</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{t.title}</span>
+                </div>
+              ))}
+              {zipResult.errors?.map((e, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span style={{ color: 'var(--danger)' }}>✗</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{e.file}: {e.error}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => { setShowZipUpload(false); setZipResult(null); }}>Done</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

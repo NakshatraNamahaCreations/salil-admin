@@ -61,8 +61,8 @@ export const PodcastsPage = () => {
 
   // ── Series CRUD ──────────────────────────────────────────────────
   const handleDelete = async (id) => {
-    if (!window.confirm('Archive this podcast series?')) return;
-    try { await api.delete(`/admin/podcast-series/${id}`); toast.success('Series archived'); fetchSeries(); }
+    if (!window.confirm('Delete this podcast series and all its episodes? This cannot be undone.')) return;
+    try { await api.delete(`/admin/podcast-series/${id}`); toast.success('Series deleted'); fetchSeries(); }
     catch { toast.error('Failed to delete'); }
   };
 
