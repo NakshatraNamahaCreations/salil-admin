@@ -20,6 +20,7 @@ import {
   FileText,
   Headphones,
   Music,
+  Upload,
 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -90,6 +91,9 @@ export const BooksPage = () => {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkRows, setBulkRows] = useState([newBulkRow(1)]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [showZipUpload, setShowZipUpload] = useState(false);
+  const [zipUploading, setZipUploading] = useState(false);
+  const [zipResult, setZipResult] = useState(null);
 
   // Audio chapters
   const [audioChapters, setAudioChapters] = useState([]);
@@ -367,6 +371,35 @@ export const BooksPage = () => {
     }
   };
 
+  const handleZipUpload = async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const zipFile = f.get('zipFile');
+    if (!zipFile || !(zipFile instanceof File) || zipFile.size === 0) {
+      toast.error('Please select a ZIP file');
+      return;
+    }
+    try {
+      setZipUploading(true);
+      setZipResult(null);
+      const payload = new FormData();
+      payload.append('zipFile', zipFile);
+      const res = await api.post(`/admin/books/${chaptersBook._id}/chapters/bulk-zip`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const result = res?.data?.data || res?.data || {};
+      setZipResult(result);
+      if (result.uploaded > 0) {
+        toast.success(`${result.uploaded} chapter(s) uploaded from ZIP`);
+        fetchChapters(chaptersBook._id);
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to upload ZIP');
+    } finally {
+      setZipUploading(false);
+    }
+  };
+
   const handleTogglePublishChapter = async (chapter) => {
     try {
       const newStatus = chapter.status === 'published' ? 'draft' : 'published';
@@ -633,6 +666,7 @@ export const BooksPage = () => {
           <div className="page-actions">
             {isEbook && (
               <>
+                <Button variant="secondary" icon={Upload} onClick={() => { setZipResult(null); setShowZipUpload(true); }}>ZIP Upload</Button>
                 <Button variant="secondary" icon={Layers} onClick={() => { setBulkRows([newBulkRow(chapters.length + 1)]); setShowBulkAdd(true); }}>Bulk Add</Button>
                 <Button icon={Plus} onClick={() => setShowAddChapter(true)}>Add Chapter</Button>
               </>
@@ -872,6 +906,77 @@ export const BooksPage = () => {
               </Button>
             </div>
           </div>
+        </Modal>
+
+        {/* ZIP Chapter Upload Modal */}
+        <Modal isOpen={showZipUpload} onClose={() => { setShowZipUpload(false); setZipResult(null); }}
+          title={`ZIP Upload — ${chaptersBook?.title || ''}`}>
+          {!zipResult ? (
+            <form className="space-y-4" onSubmit={handleZipUpload}>
+              <div className="p-4 rounded-xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Upload a ZIP file containing PDF chapters. Each PDF becomes a chapter — the chapter name is taken from the PDF filename.
+                </p>
+                <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  ZIP File <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="file"
+                  name="zipFile"
+                  accept=".zip,application/zip,application/x-zip-compressed"
+                  className="input-field w-full"
+                  required
+                />
+                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                  Chapters are auto-numbered after existing ones. PDFs are sorted by filename. Max ZIP size: 200MB.
+                </p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="secondary" disabled={zipUploading}
+                  onClick={() => { setShowZipUpload(false); setZipResult(null); }}>Cancel</Button>
+                <Button type="submit" icon={Upload} isLoading={zipUploading}>
+                  {zipUploading ? 'Uploading…' : 'Upload ZIP'}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-card)' }}>
+                <div className="text-center flex-1">
+                  <p className="text-3xl font-bold" style={{ color: 'var(--accent-400)' }}>{zipResult.uploaded}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Chapters uploaded</p>
+                </div>
+                {zipResult.failed > 0 && (
+                  <div className="text-center flex-1">
+                    <p className="text-3xl font-bold text-red-500">{zipResult.failed}</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Failed</p>
+                  </div>
+                )}
+              </div>
+              {zipResult.chapters?.length > 0 && (
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {zipResult.chapters.map((ch, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg" style={{ background: 'var(--bg-card)' }}>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: 'var(--accent-400)' }}>{i + 1}</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{ch.title}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {zipResult.errors?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-red-500">Errors:</p>
+                  {zipResult.errors.map((err, i) => (
+                    <p key={i} className="text-xs" style={{ color: 'var(--text-muted)' }}>{err.file}: {err.error}</p>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="secondary" onClick={() => { setShowZipUpload(false); setZipResult(null); }}>Close</Button>
+                <Button icon={Upload} onClick={() => setZipResult(null)}>Upload Another ZIP</Button>
+              </div>
+            </div>
+          )}
         </Modal>
 
         {/* Bulk Add Audio Chapters */}
