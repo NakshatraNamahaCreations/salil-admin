@@ -70,7 +70,7 @@ export const AdminLayout = () => {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-white text-xs"
                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              BV
+              SJ
             </div>
             <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Salil javeri</span>
           </div>
