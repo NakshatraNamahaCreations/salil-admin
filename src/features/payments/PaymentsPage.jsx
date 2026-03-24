@@ -51,10 +51,26 @@ export const PaymentsPage = () => {
 
   const [filters, setFilters] = useState({ status: '', gateway: '', startDate: '', endDate: '' });
   const [viewPayment, setViewPayment] = useState(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
 
   const [activeTab, setActiveTab] = useState('payments');
+
+  const [bookPurchases, setBookPurchases] = useState([]);
+  const [bookPurchasesLoading, setBookPurchasesLoading] = useState(false);
+  const [bookPurchasePagination, setBookPurchasePagination] = useState(null);
+  const [bookPurchasePage, setBookPurchasePage] = useState(1);
+
+  const fetchBookPurchases = async () => {
+    setBookPurchasesLoading(true);
+    try {
+      const res = await api.get('/admin/payments/book-purchases', { params: { page: bookPurchasePage, limit: 20 } });
+      setBookPurchases(res.data || []);
+      setBookPurchasePagination(res.pagination || null);
+    } catch {
+      setBookPurchases([]);
+    } finally {
+      setBookPurchasesLoading(false);
+    }
+  };
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -119,22 +135,9 @@ export const PaymentsPage = () => {
     if (activeTab === 'purchases') fetchPurchases();
   }, [activeTab, purchasePage]);
 
-  const handleUpdateStatus = async () => {
-    if (!newStatus || !viewPayment) return;
-    setUpdatingStatus(true);
-    try {
-      await api.patch(`/admin/payments/${viewPayment._id}/status`, { status: newStatus });
-      toast.success('Payment status updated');
-      setViewPayment(null);
-      setNewStatus('');
-      fetchPayments();
-      fetchSummary();
-    } catch (err) {
-      toast.error(err.message || 'Failed to update status');
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
+  useEffect(() => {
+    if (activeTab === 'bookorders') fetchBookPurchases();
+  }, [activeTab, bookPurchasePage]);
 
   const paymentColumns = [
     {
@@ -166,6 +169,12 @@ export const PaymentsPage = () => {
       ),
     },
     {
+      header: 'Discount', key: 'discountAmount',
+      render: (row) => row.discountAmount > 0
+        ? <span className="text-sm font-semibold text-emerald-500">-₹{row.discountAmount}</span>
+        : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>,
+    },
+    {
       header: 'Status', key: 'status',
       render: (row) => {
         const m = statusMeta[row.status] || { variant: 'neutral', label: row.status };
@@ -183,7 +192,7 @@ export const PaymentsPage = () => {
     {
       header: '', key: 'actions', align: 'right',
       render: (row) => (
-        <Button variant="ghost" size="sm" icon={Eye} onClick={() => { setViewPayment(row); setNewStatus(row.status); }} />
+        <Button variant="ghost" size="sm" icon={Eye} onClick={() => setViewPayment(row)} />
       ),
     },
   ];
@@ -206,6 +215,52 @@ export const PaymentsPage = () => {
         const m = statusMeta[row.paymentStatus] || { variant: 'neutral', label: row.paymentStatus };
         return <Badge variant={m.variant}>{m.label}</Badge>;
       }
+    },
+    { header: 'Date', key: 'createdAt', render: (row) => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(row.createdAt).toLocaleDateString('en-IN')}</span> },
+  ];
+
+  const bookOrderColumns = [
+    {
+      header: 'User', key: 'userId',
+      render: (row) => (
+        <div>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.userId?.name || 'Unknown'}</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{row.userId?.email || ''}</p>
+        </div>
+      ),
+    },
+    {
+      header: 'Book', key: 'bookId',
+      render: (row) => <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{row.bookId?.title || '—'}</span>,
+    },
+    {
+      header: 'Amount Paid', key: 'amountPaid',
+      render: (row) => (
+        <div>
+          {row.discountAmount > 0 && (
+            <p className="text-xs line-through" style={{ color: 'var(--text-muted)' }}>₹{row.originalAmount || row.amountPaid}</p>
+          )}
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>₹{row.amountPaid}</p>
+        </div>
+      ),
+    },
+    {
+      header: 'Discount', key: 'discountAmount',
+      render: (row) => row.discountAmount > 0
+        ? (
+          <div>
+            <p className="text-sm font-semibold text-emerald-500">-₹{row.discountAmount}</p>
+            {row.couponCode && <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>{row.couponCode}</p>}
+          </div>
+        )
+        : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>,
+    },
+    {
+      header: 'Status', key: 'status',
+      render: (row) => {
+        const m = statusMeta[row.status] || { variant: 'neutral', label: row.status };
+        return <Badge variant={m.variant}>{m.label}</Badge>;
+      },
     },
     { header: 'Date', key: 'createdAt', render: (row) => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(row.createdAt).toLocaleDateString('en-IN')}</span> },
   ];
@@ -273,7 +328,7 @@ export const PaymentsPage = () => {
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)', width: 'fit-content', border: '1px solid var(--border-subtle)' }}>
-        {[{ key: 'payments', label: 'Gateway Payments' }, { key: 'purchases', label: 'Book Purchases' }].map(tab => (
+        {[{ key: 'payments', label: 'Gateway Payments' }, { key: 'bookorders', label: 'Book Orders' }, { key: 'purchases', label: 'Coin Purchases' }].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={{
@@ -287,9 +342,13 @@ export const PaymentsPage = () => {
       </div>
 
       {/* Data Table */}
-      {activeTab === 'payments' ? (
+      {activeTab === 'payments' && (
         <DataTable columns={paymentColumns} data={payments} isLoading={loading} pagination={pagination} onPageChange={setPage} />
-      ) : (
+      )}
+      {activeTab === 'bookorders' && (
+        <DataTable columns={bookOrderColumns} data={bookPurchases} isLoading={bookPurchasesLoading} pagination={bookPurchasePagination} onPageChange={setBookPurchasePage} />
+      )}
+      {activeTab === 'purchases' && (
         <DataTable columns={purchaseColumns} data={purchases} isLoading={purchasesLoading} pagination={purchasePagination} onPageChange={setPurchasePage} />
       )}
 
@@ -303,6 +362,7 @@ export const PaymentsPage = () => {
                 { label: 'Order ID', value: viewPayment.gatewayOrderId || '—' },
                 { label: 'Gateway', value: viewPayment.gateway },
                 { label: 'Amount', value: formatAmount(viewPayment.amount, viewPayment.currency) },
+                { label: 'Discount', value: viewPayment.discountAmount > 0 ? `-₹${viewPayment.discountAmount}` : '—' },
                 { label: 'Currency', value: viewPayment.currency || '—' },
                 { label: 'Date', value: new Date(viewPayment.createdAt).toLocaleString('en-IN') },
               ].map(({ label, value }) => (
@@ -324,20 +384,8 @@ export const PaymentsPage = () => {
               <Badge variant={statusMeta[viewPayment.status]?.variant || 'neutral'}>{statusMeta[viewPayment.status]?.label || viewPayment.status}</Badge>
             </div>
 
-            <div className="space-y-2">
-              <Select label="Update Status" value={newStatus} onChange={e => setNewStatus(e.target.value)}
-                options={[
-                  { value: 'created', label: 'Created' },
-                  { value: 'authorized', label: 'Authorized' },
-                  { value: 'captured', label: 'Captured' },
-                  { value: 'failed', label: 'Failed' },
-                  { value: 'refunded', label: 'Refunded' },
-                ]} />
-            </div>
-
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end">
               <Button variant="secondary" onClick={() => setViewPayment(null)}>Close</Button>
-              <Button onClick={handleUpdateStatus} isLoading={updatingStatus}>Update Status</Button>
             </div>
           </div>
         </Modal>
