@@ -6,6 +6,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Forms';
 import { Headphones, Plus, Edit, Trash2, Play, Pause, Upload } from 'lucide-react';
 import api from '../../services/api';
+import { uploadFileToS3 } from '../../services/s3Upload';
 import toast from 'react-hot-toast';
 
 const formatDuration = (s) => {
@@ -87,9 +88,22 @@ export const AudiobooksPage = () => {
     const formData = new FormData(e.target);
     setSubmitting(true);
     try {
-      await api.post('/admin/audiobooks', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const payload = {
+        bookId: formData.get('bookId'),
+        title: formData.get('title'),
+        narrator: formData.get('narrator') || '',
+        duration: Number(formData.get('duration')) || 0,
+        status: formData.get('status') || 'draft',
+      };
+      const audioFile = formData.get('audioFile');
+      if (audioFile && audioFile instanceof File && audioFile.size > 0) {
+        const tid = toast.loading('Uploading audio to S3...');
+        payload.audioUrl = await uploadFileToS3(audioFile, 'audio');
+        toast.dismiss(tid);
+      } else {
+        payload.audioUrl = formData.get('audioUrl') || '';
+      }
+      await api.post('/admin/audiobooks', payload);
       toast.success('Track created');
       setShowCreate(false);
       fetchTracks();
@@ -100,27 +114,24 @@ export const AudiobooksPage = () => {
   const handleEdit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const audioFile = formData.get('audioFile');
-    const hasFile = audioFile && audioFile instanceof File && audioFile.size > 0;
-
     setSubmitting(true);
     try {
-      if (hasFile) {
-        // Only use multipart when there's actually an audio file to upload
-        await api.put(`/admin/audiobooks/${editTrack._id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+      const payload = {
+        title: formData.get('title'),
+        narrator: formData.get('narrator') || '',
+        duration: Number(formData.get('duration')) || 0,
+        status: formData.get('status'),
+      };
+      const audioFile = formData.get('audioFile');
+      if (audioFile && audioFile instanceof File && audioFile.size > 0) {
+        const tid = toast.loading('Uploading audio to S3...');
+        payload.audioUrl = await uploadFileToS3(audioFile, 'audio');
+        toast.dismiss(tid);
       } else {
-        // Send as JSON when no file — avoids triggering S3 upload
-        const payload = {
-          title: formData.get('title'),
-          audioUrl: formData.get('audioUrl') || undefined,
-          narrator: formData.get('narrator') || '',
-          duration: Number(formData.get('duration')) || 0,
-          status: formData.get('status'),
-        };
-        await api.put(`/admin/audiobooks/${editTrack._id}`, payload);
+        const audioUrl = formData.get('audioUrl');
+        if (audioUrl) payload.audioUrl = audioUrl;
       }
+      await api.put(`/admin/audiobooks/${editTrack._id}`, payload);
       toast.success('Track updated');
       setEditTrack(null);
       fetchTracks();

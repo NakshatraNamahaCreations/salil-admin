@@ -23,6 +23,7 @@ import {
   Upload,
 } from 'lucide-react';
 import api from '../../services/api';
+import { uploadFileToS3 } from '../../services/s3Upload';
 import toast from 'react-hot-toast';
 
 const LANGUAGE_OPTIONS = [
@@ -293,16 +294,20 @@ export const BooksPage = () => {
       e.preventDefault();
       setChapterSubmitting(true);
       const f = new FormData(e.target);
-      const payload = new FormData();
-      payload.append('title', f.get('title') || '');
-      payload.append('orderNumber', f.get('orderNumber') || '');
-      payload.append('estimatedReadTime', f.get('estimatedReadTime') || '0');
-      payload.append('status', f.get('status') || 'published');
+      const payload = {
+        title: f.get('title') || '',
+        orderNumber: f.get('orderNumber') || '',
+        estimatedReadTime: f.get('estimatedReadTime') || '0',
+        status: f.get('status') || 'published',
+      };
       const file = f.get('pdfFile');
-      if (file && file instanceof File && file.size > 0) payload.append('pdfFile', file);
-      await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (file && file instanceof File && file.size > 0) {
+        const tid = toast.loading('Uploading PDF to S3...');
+        payload.rawPdfUrl = await uploadFileToS3(file, 'pdf');
+        payload.sourceType = 'pdf';
+        toast.dismiss(tid);
+      }
+      await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload);
       toast.success('Chapter added');
       setShowAddChapter(false);
       fetchChapters(chaptersBook._id);
@@ -327,16 +332,20 @@ export const BooksPage = () => {
       e.preventDefault();
       setChapterSubmitting(true);
       const f = new FormData(e.target);
-      const payload = new FormData();
-      payload.append('title', f.get('title') || '');
-      payload.append('orderNumber', f.get('orderNumber') || '');
-      payload.append('estimatedReadTime', f.get('estimatedReadTime') || '0');
-      payload.append('status', f.get('status') || 'draft');
+      const payload = {
+        title: f.get('title') || '',
+        orderNumber: f.get('orderNumber') || '',
+        estimatedReadTime: f.get('estimatedReadTime') || '0',
+        status: f.get('status') || 'draft',
+      };
       const file = f.get('pdfFile');
-      if (file && file instanceof File && file.size > 0) payload.append('pdfFile', file);
-      await api.put(`/admin/chapters/${editChapter._id}`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (file && file instanceof File && file.size > 0) {
+        const tid = toast.loading('Uploading PDF to S3...');
+        payload.rawPdfUrl = await uploadFileToS3(file, 'pdf');
+        payload.sourceType = 'pdf';
+        toast.dismiss(tid);
+      }
+      await api.put(`/admin/chapters/${editChapter._id}`, payload);
       toast.success('Chapter updated');
       setEditChapter(null);
       fetchChapters(chaptersBook._id);
@@ -353,15 +362,19 @@ export const BooksPage = () => {
     try {
       setBulkSubmitting(true);
       for (const row of bulkRows) {
-        const payload = new FormData();
-        payload.append('title', row.title);
-        payload.append('orderNumber', String(row.orderNumber));
-        payload.append('estimatedReadTime', String(row.estimatedReadTime || 0));
-        payload.append('status', row.status || 'draft');
-        if (row.pdfFile instanceof File) payload.append('pdfFile', row.pdfFile);
-        await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const payload = {
+          title: row.title,
+          orderNumber: String(row.orderNumber),
+          estimatedReadTime: String(row.estimatedReadTime || 0),
+          status: row.status || 'draft',
+        };
+        if (row.pdfFile instanceof File) {
+          const tid = toast.loading(`Uploading PDF for "${row.title}"...`);
+          payload.rawPdfUrl = await uploadFileToS3(row.pdfFile, 'pdf');
+          payload.sourceType = 'pdf';
+          toast.dismiss(tid);
+        }
+        await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload);
       }
       toast.success(`${bulkRows.length} chapter${bulkRows.length > 1 ? 's' : ''} added`);
       setShowBulkAdd(false);
@@ -448,18 +461,21 @@ export const BooksPage = () => {
       e.preventDefault();
       setAudioChapterSubmitting(true);
       const f = new FormData(e.target);
-      const payload = new FormData();
-      payload.append('bookId', chaptersBook._id);
-      payload.append('title', f.get('title') || '');
-      payload.append('orderNumber', f.get('orderNumber') || '1');
-      payload.append('duration', f.get('duration') || '0');
-      payload.append('narrator', f.get('narrator') || '');
-      payload.append('status', f.get('status') || 'published');
+      const payload = {
+        bookId: chaptersBook._id,
+        title: f.get('title') || '',
+        orderNumber: f.get('orderNumber') || '1',
+        duration: f.get('duration') || '0',
+        narrator: f.get('narrator') || '',
+        status: f.get('status') || 'published',
+      };
       const file = f.get('audioFile');
-      if (file && file instanceof File && file.size > 0) payload.append('audioFile', file);
-      await api.post('/admin/audiobooks', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (file && file instanceof File && file.size > 0) {
+        const tid = toast.loading('Uploading audio to S3...');
+        payload.audioUrl = await uploadFileToS3(file, 'audio');
+        toast.dismiss(tid);
+      }
+      await api.post('/admin/audiobooks', payload);
       toast.success('Audio chapter added');
       setShowAddAudio(false);
       fetchAudioChapters(chaptersBook._id);
@@ -475,17 +491,20 @@ export const BooksPage = () => {
       e.preventDefault();
       setAudioChapterSubmitting(true);
       const f = new FormData(e.target);
-      const payload = new FormData();
-      payload.append('title', f.get('title') || '');
-      payload.append('orderNumber', f.get('orderNumber') || '1');
-      payload.append('duration', f.get('duration') || '0');
-      payload.append('narrator', f.get('narrator') || '');
-      payload.append('status', f.get('status') || 'draft');
+      const payload = {
+        title: f.get('title') || '',
+        orderNumber: f.get('orderNumber') || '1',
+        duration: f.get('duration') || '0',
+        narrator: f.get('narrator') || '',
+        status: f.get('status') || 'draft',
+      };
       const file = f.get('audioFile');
-      if (file && file instanceof File && file.size > 0) payload.append('audioFile', file);
-      await api.put(`/admin/audiobooks/${editAudio._id}`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (file && file instanceof File && file.size > 0) {
+        const tid = toast.loading('Uploading audio to S3...');
+        payload.audioUrl = await uploadFileToS3(file, 'audio');
+        toast.dismiss(tid);
+      }
+      await api.put(`/admin/audiobooks/${editAudio._id}`, payload);
       toast.success('Audio chapter updated');
       setEditAudio(null);
       fetchAudioChapters(chaptersBook._id);
@@ -519,17 +538,20 @@ export const BooksPage = () => {
     try {
       setAudioBulkSubmitting(true);
       for (const row of audioBulkRows) {
-        const payload = new FormData();
-        payload.append('bookId', chaptersBook._id);
-        payload.append('title', row.title);
-        payload.append('orderNumber', String(row.orderNumber));
-        payload.append('duration', String(row.duration || 0));
-        payload.append('narrator', row.narrator || '');
-        payload.append('status', row.status || 'draft');
-        if (row.audioFile instanceof File) payload.append('audioFile', row.audioFile);
-        await api.post('/admin/audiobooks', payload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const payload = {
+          bookId: chaptersBook._id,
+          title: row.title,
+          orderNumber: String(row.orderNumber),
+          duration: String(row.duration || 0),
+          narrator: row.narrator || '',
+          status: row.status || 'draft',
+        };
+        if (row.audioFile instanceof File) {
+          const tid = toast.loading(`Uploading audio for "${row.title}"...`);
+          payload.audioUrl = await uploadFileToS3(row.audioFile, 'audio');
+          toast.dismiss(tid);
+        }
+        await api.post('/admin/audiobooks', payload);
       }
       toast.success(`${audioBulkRows.length} audio chapter${audioBulkRows.length > 1 ? 's' : ''} added`);
       setShowBulkAddAudio(false);
