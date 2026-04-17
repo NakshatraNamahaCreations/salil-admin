@@ -53,6 +53,7 @@ const newBulkRow = (order = 1) => ({
   estimatedReadTime: '',
   status: 'published',
   pdfFile: null,
+  imageFile: null,
 });
 
 const newAudioBulkRow = (order = 1) => ({
@@ -63,6 +64,7 @@ const newAudioBulkRow = (order = 1) => ({
   narrator: '',
   status: 'published',
   audioFile: null,
+  imageFile: null,
 });
 
 export const BooksPage = () => {
@@ -307,6 +309,12 @@ export const BooksPage = () => {
         payload.sourceType = 'pdf';
         toast.dismiss(tid);
       }
+      const imgFile = f.get('chapterImage');
+      if (imgFile && imgFile instanceof File && imgFile.size > 0) {
+        const tid = toast.loading('Uploading chapter image...');
+        payload.chapterImage = await uploadFileToS3(imgFile, 'image');
+        toast.dismiss(tid);
+      }
       await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload);
       toast.success('Chapter added');
       setShowAddChapter(false);
@@ -345,6 +353,12 @@ export const BooksPage = () => {
         payload.sourceType = 'pdf';
         toast.dismiss(tid);
       }
+      const imgFile = f.get('chapterImage');
+      if (imgFile && imgFile instanceof File && imgFile.size > 0) {
+        const tid = toast.loading('Uploading chapter image...');
+        payload.chapterImage = await uploadFileToS3(imgFile, 'image');
+        toast.dismiss(tid);
+      }
       await api.put(`/admin/chapters/${editChapter._id}`, payload);
       toast.success('Chapter updated');
       setEditChapter(null);
@@ -372,6 +386,11 @@ export const BooksPage = () => {
           const tid = toast.loading(`Uploading PDF for "${row.title}"...`);
           payload.rawPdfUrl = await uploadFileToS3(row.pdfFile, 'pdf');
           payload.sourceType = 'pdf';
+          toast.dismiss(tid);
+        }
+        if (row.imageFile instanceof File) {
+          const tid = toast.loading(`Uploading image for "${row.title}"...`);
+          payload.chapterImage = await uploadFileToS3(row.imageFile, 'image');
           toast.dismiss(tid);
         }
         await api.post(`/admin/books/${chaptersBook._id}/chapters`, payload);
@@ -475,6 +494,12 @@ export const BooksPage = () => {
         payload.audioUrl = await uploadFileToS3(file, 'audio');
         toast.dismiss(tid);
       }
+      const imgFile = f.get('chapterImage');
+      if (imgFile && imgFile instanceof File && imgFile.size > 0) {
+        const tid = toast.loading('Uploading chapter image...');
+        payload.chapterImage = await uploadFileToS3(imgFile, 'image');
+        toast.dismiss(tid);
+      }
       await api.post('/admin/audiobooks', payload);
       toast.success('Audio chapter added');
       setShowAddAudio(false);
@@ -502,6 +527,12 @@ export const BooksPage = () => {
       if (file && file instanceof File && file.size > 0) {
         const tid = toast.loading('Uploading audio to S3...');
         payload.audioUrl = await uploadFileToS3(file, 'audio');
+        toast.dismiss(tid);
+      }
+      const imgFile = f.get('chapterImage');
+      if (imgFile && imgFile instanceof File && imgFile.size > 0) {
+        const tid = toast.loading('Uploading chapter image...');
+        payload.chapterImage = await uploadFileToS3(imgFile, 'image');
         toast.dismiss(tid);
       }
       await api.put(`/admin/audiobooks/${editAudio._id}`, payload);
@@ -549,6 +580,11 @@ export const BooksPage = () => {
         if (row.audioFile instanceof File) {
           const tid = toast.loading(`Uploading audio for "${row.title}"...`);
           payload.audioUrl = await uploadFileToS3(row.audioFile, 'audio');
+          toast.dismiss(tid);
+        }
+        if (row.imageFile instanceof File) {
+          const tid = toast.loading(`Uploading image for "${row.title}"...`);
+          payload.chapterImage = await uploadFileToS3(row.imageFile, 'image');
           toast.dismiss(tid);
         }
         await api.post('/admin/audiobooks', payload);
@@ -742,6 +778,15 @@ export const BooksPage = () => {
           <DataTable
             columns={[
               { header: '#', key: '_seq', render: (row) => <span className="text-sm font-bold" style={{ color: 'var(--accent-400)' }}>{row._seq}</span> },
+              {
+                header: 'Image', key: 'chapterImage', render: (row) => row.chapterImage ? (
+                  <img src={row.chapterImage} alt={row.title} className="w-10 h-10 object-cover rounded-md border" style={{ borderColor: 'var(--border)' }} />
+                ) : (
+                  <div className="w-10 h-10 rounded-md flex items-center justify-center" style={{ background: 'var(--bg-subtle, #f3f4f6)', border: '1px solid var(--border)' }}>
+                    <ImageIcon className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                )
+              },
               { header: 'Title', key: 'title', render: (row) => <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.title}</span> },
               { header: 'Status', key: 'status', render: (row) => <Badge variant={row.status === 'published' ? 'success' : 'neutral'}>{row.status}</Badge> },
               { header: 'Read Time', key: 'estimatedReadTime', render: (row) => <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{row.estimatedReadTime ? `${row.estimatedReadTime} min` : '—'}</span> },
@@ -768,6 +813,15 @@ export const BooksPage = () => {
           <DataTable
             columns={[
               { header: '#', key: '_seq', render: (row) => <span className="text-sm font-bold" style={{ color: 'var(--accent-400)' }}>{row._seq}</span> },
+              {
+                header: 'Image', key: 'chapterImage', render: (row) => row.chapterImage ? (
+                  <img src={row.chapterImage} alt={row.title} className="w-10 h-10 object-cover rounded-md border" style={{ borderColor: 'var(--border)' }} />
+                ) : (
+                  <div className="w-10 h-10 rounded-md flex items-center justify-center" style={{ background: 'var(--bg-subtle, #f3f4f6)', border: '1px solid var(--border)' }}>
+                    <ImageIcon className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                )
+              },
               {
                 header: 'Title', key: 'title', render: (row) => (
                   <div>
@@ -828,6 +882,12 @@ export const BooksPage = () => {
               <input type="file" name="pdfFile" accept="application/pdf" className="input-field" />
               <p className="text-xs text-gray-500 mt-1">Upload a PDF to automatically generate chapter text.</p>
             </div>
+            <div className="w-full">
+              <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <input type="file" name="chapterImage" accept="image/*" className="input-field" />
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setShowAddChapter(false)}>Cancel</Button>
               <Button type="submit" isLoading={chapterSubmitting}>Add Chapter</Button>
@@ -849,6 +909,15 @@ export const BooksPage = () => {
               <div className="w-full">
                 <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Replace PDF (optional)</label>
                 <input type="file" name="pdfFile" accept="application/pdf" className="input-field" />
+              </div>
+              <div className="w-full">
+                <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+                </label>
+                {editChapter.chapterImage && (
+                  <img src={editChapter.chapterImage} alt="Current" className="w-16 h-16 object-cover rounded-lg mb-1 border" style={{ borderColor: 'var(--border)' }} />
+                )}
+                <input type="file" name="chapterImage" accept="image/*" className="input-field" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="secondary" onClick={() => setEditChapter(null)}>Cancel</Button>
@@ -875,6 +944,12 @@ export const BooksPage = () => {
               </label>
               <input type="file" name="audioFile" accept="audio/*" className="input-field" />
             </div>
+            <div className="w-full">
+              <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <input type="file" name="chapterImage" accept="image/*" className="input-field" />
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setShowAddAudio(false)}>Cancel</Button>
               <Button type="submit" isLoading={audioChapterSubmitting}>Add Audio Chapter</Button>
@@ -894,6 +969,15 @@ export const BooksPage = () => {
               <Input label="Narrator Name" name="narrator" defaultValue={editAudio.narrator || ''} />
               <Select label="Status" name="status" defaultValue={editAudio.status}
                 options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }]} />
+              <div className="w-full">
+                <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+                </label>
+                {editAudio.chapterImage && (
+                  <img src={editAudio.chapterImage} alt="Current" className="w-16 h-16 object-cover rounded-lg mb-1 border" style={{ borderColor: 'var(--border)' }} />
+                )}
+                <input type="file" name="chapterImage" accept="image/*" className="input-field" />
+              </div>
               <div className="w-full">
                 <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
                   Replace Audio File
@@ -947,6 +1031,12 @@ export const BooksPage = () => {
                     <div className="col-span-2">
                       <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>PDF File</label>
                       <input type="file" accept="application/pdf" className="input-field w-full" onChange={(e) => updateBulkRow(row.id, 'pdfFile', e.target.files?.[0] || null)} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                        Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+                      </label>
+                      <input type="file" accept="image/*" className="input-field w-full" onChange={(e) => updateBulkRow(row.id, 'imageFile', e.target.files?.[0] || null)} />
                     </div>
                   </div>
                 </div>
@@ -1079,6 +1169,12 @@ export const BooksPage = () => {
                     <div className="col-span-2">
                       <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Audio File (MP3)</label>
                       <input type="file" accept="audio/*" className="input-field w-full" onChange={(e) => updateAudioBulkRow(row.id, 'audioFile', e.target.files?.[0] || null)} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[0.75rem] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                        Chapter Image <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+                      </label>
+                      <input type="file" accept="image/*" className="input-field w-full" onChange={(e) => updateAudioBulkRow(row.id, 'imageFile', e.target.files?.[0] || null)} />
                     </div>
                   </div>
                 </div>
