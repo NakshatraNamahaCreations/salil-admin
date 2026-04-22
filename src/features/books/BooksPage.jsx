@@ -180,7 +180,7 @@ export const BooksPage = () => {
   const fetchAudioChapters = async (bookId) => {
     try {
       setAudioChaptersLoading(true);
-      const res = await api.get('/admin/audiobooks', { params: { bookId } });
+      const res = await api.get('/admin/audiobooks', { params: { bookId, limit: 1000 } });
       setAudioChapters(res?.data?.data || res?.data || []);
     } catch (error) {
       console.error('Fetch audio chapters error:', error);

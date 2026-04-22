@@ -3,7 +3,7 @@ import { DataTable, Badge } from '../../components/ui/DataDisplay';
 import { SearchInput, Input, Select, Textarea } from '../../components/ui/Forms';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { Ticket, Plus, Edit, Trash2, Copy } from 'lucide-react';
+import { Ticket, Plus, Edit, Trash2, Copy, History } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,10 @@ export const CouponsPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editCoupon, setEditCoupon] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [historyCoupon, setHistoryCoupon] = useState(null);
+  const [historyUsages, setHistoryUsages] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const fetchCoupons = async () => {
     setLoading(true);
@@ -102,6 +106,20 @@ export const CouponsPage = () => {
     }
   };
 
+  const openHistory = async (coupon) => {
+    setHistoryCoupon(coupon);
+    setHistoryUsages([]);
+    setHistoryLoading(true);
+    try {
+      const res = await api.get(`/admin/coupons/${coupon._id}/usages`);
+      setHistoryUsages(res?.data?.usages || []);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to load usage history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
     toast.success('Code copied');
@@ -179,6 +197,7 @@ export const CouponsPage = () => {
       header: '', key: 'actions',
       render: (row) => (
         <div className="flex gap-0.5">
+          <Button variant="ghost" size="sm" icon={History} title="Usage history" onClick={() => openHistory(row)} />
           <Button variant="ghost" size="sm" icon={Edit} onClick={() => setEditCoupon(row)} />
           <Button variant="ghost" size="sm" icon={Trash2} className="!text-red-400" onClick={() => handleDelete(row)} />
         </div>
@@ -256,6 +275,56 @@ export const CouponsPage = () => {
           </div>
         </form>
       </Modal>
+
+      {historyCoupon && (
+        <Modal
+          isOpen={!!historyCoupon}
+          onClose={() => setHistoryCoupon(null)}
+          title={`Usage History — ${historyCoupon.code}`}
+          maxWidth="720px"
+        >
+          {historyLoading ? (
+            <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+          ) : historyUsages.length === 0 ? (
+            <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>
+              No completed purchases have used this coupon yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <th className="text-left py-2 px-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>User</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Book</th>
+                    <th className="text-right py-2 px-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Paid</th>
+                    <th className="text-right py-2 px-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Discount</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyUsages.map((u, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="py-2 px-2">
+                        <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{u.user}</div>
+                        {u.email && <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.email}</div>}
+                      </td>
+                      <td className="py-2 px-2" style={{ color: 'var(--text-secondary)' }}>{u.book}</td>
+                      <td className="py-2 px-2 text-right font-semibold" style={{ color: 'var(--text-primary)' }}>₹{u.amountPaid}</td>
+                      <td className="py-2 px-2 text-right" style={{ color: 'var(--success)' }}>-₹{u.discountAmount}</td>
+                      <td className="py-2 px-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {new Date(u.date).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="flex justify-end pt-4">
+            <Button variant="secondary" onClick={() => setHistoryCoupon(null)}>Close</Button>
+          </div>
+        </Modal>
+      )}
 
       {editCoupon && (
         <Modal isOpen={!!editCoupon} onClose={() => { if (!submitting) setEditCoupon(null); }} title="Edit Coupon">

@@ -86,9 +86,11 @@ export const PodcastsPage = () => {
     const data = {
       title: f.get('title'),
       episodeNumber: Number(f.get('episodeNumber')),
+      sourceType: 'youtube_link',
       youtubeUrl: f.get('youtubeUrl'),
       description: f.get('description'),
       isFree: true,
+      status: 'published',
     };
     setSaving(true);
     try {
@@ -106,6 +108,7 @@ export const PodcastsPage = () => {
     const data = {
       title: f.get('title'),
       episodeNumber: Number(f.get('episodeNumber')),
+      sourceType: 'youtube_link',
       youtubeUrl: f.get('youtubeUrl'),
       description: f.get('description'),
       isFree: true,
