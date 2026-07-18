@@ -44,6 +44,7 @@ export const WalletPage = () => {
     { header: 'Coins', key: 'coins', render: (row) => <span className="text-sm font-bold" style={{ color: '#f59e0b' }}>{row.coins}</span> },
     { header: 'Bonus', key: 'bonusCoins', render: (row) => <span className="text-sm font-semibold" style={{ color: 'var(--success)' }}>+{row.bonusCoins}</span> },
     { header: 'Price', key: 'priceINR', render: (row) => <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>₹{row.priceINR}</span> },
+    { header: 'Product ID', key: 'appleProductId', render: (row) => <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{row.appleProductId || `coins_${row.coins}`}</span> },
     { header: 'Status', key: 'isActive', render: (row) => <Badge variant={row.isActive ? 'success' : 'neutral'}>{row.isActive ? 'Active' : 'Inactive'}</Badge> },
     {
       header: '', key: 'actions',
@@ -80,6 +81,7 @@ export const WalletPage = () => {
             bonusCoins: Number(formData.get('bonusCoins') || 0),
             priceINR: Number(formData.get('priceINR') || 0),
             priceUSD: Number(formData.get('priceUSD') || 0),
+            appleProductId: (formData.get('appleProductId') || '').trim(),
             offerLabel: formData.get('offerLabel'),
             isOffer: !!formData.get('offerLabel')
           };
@@ -94,6 +96,7 @@ export const WalletPage = () => {
           <Input label="Pack Name" name="name" placeholder="e.g. Super Pack" required />
           <div className="grid grid-cols-2 gap-4"><Input label="Coins" name="coins" type="number" placeholder="100" required /><Input label="Bonus" name="bonusCoins" type="number" placeholder="0" /></div>
           <div className="grid grid-cols-2 gap-4"><Input label="Price (INR)" name="priceINR" type="number" placeholder="99" required /><Input label="Price (USD)" name="priceUSD" type="number" placeholder="1.99" /></div>
+          <Input label="Apple Product ID" name="appleProductId" placeholder="e.g. coins_300 (must match App Store Connect; defaults to coins_<coins>)" />
           <Input label="Offer Label" name="offerLabel" placeholder="e.g. 20% Bonus! (optional)" />
           <div className="flex justify-end gap-3 pt-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button type="submit" isLoading={submitting}>Create</Button></div>
         </form>
